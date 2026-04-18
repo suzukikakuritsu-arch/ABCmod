@@ -14,36 +14,54 @@ theorem pow5_period : 5 ^ 54 % 81 = 1 := by decide
 
 /-!
 ### Reyssat 唯一性
+Int の等式を Bool 関数で表現して decide
 -/
 
-/-- γ≤20, β≤15, α≤20 での唯一性
-    型を明示的に Int に指定 -/
-theorem reyssat_unique_fin :
-    ∀ (γ : Fin 20) (β : Fin 15) (α : Fin 20),
-      (2 : ℤ) ^ (γ.val + 1) - (5 : ℤ) ^ (β.val + 1) =
-      (3 : ℤ) ^ (α.val + 1) →
-      γ.val + 1 = 7 ∧ β.val + 1 = 3 ∧ α.val + 1 = 1 := by
-  decide
+private def check2pow (n : ℕ) : ℤ := 2 ^ n
+private def check5pow (n : ℕ) : ℤ := 5 ^ n
+private def check3pow (n : ℕ) : ℤ := 3 ^ n
 
-/-- 使いやすい形 -/
+private def isReyssat (g b a : ℕ) : Bool :=
+  (check2pow g - check5pow b == check3pow a) &&
+  (g != 7 || b != 3 || a != 1) == false
+
+/-- 反例がないことを確認 -/
+private def noCounterexample : Bool :=
+  (List.finRange 20).all fun γ =>
+  (List.finRange 15).all fun β =>
+  (List.finRange 20).all fun α =>
+    let g := γ.val + 1
+    let b := β.val + 1
+    let a := α.val + 1
+    if check2pow g - check5pow b = check3pow a
+    then g == 7 && b == 3 && a == 1
+    else true
+
+#eval noCounterexample
+
+theorem noCounterexample_true : noCounterexample = true := by
+  native_decide
+
 theorem reyssat_unique_small
     (γ β α : ℕ)
     (hγ : 1 ≤ γ) (hγ2 : γ ≤ 20)
     (hβ : 1 ≤ β) (hβ2 : β ≤ 15)
     (hα : 1 ≤ α) (hα2 : α ≤ 20)
-    (heq : (2 : ℤ) ^ γ - (5 : ℤ) ^ β = (3 : ℤ) ^ α) :
+    (heq : (2 : ℤ) ^ γ - 5 ^ β = 3 ^ α) :
     γ = 7 ∧ β = 3 ∧ α = 1 := by
-  have h := reyssat_unique_fin
-    ⟨γ - 1, by omega⟩
-    ⟨β - 1, by omega⟩
-    ⟨α - 1, by omega⟩
-    (by simp only [Nat.sub_add_cancel hγ,
-                   Nat.sub_add_cancel hβ,
-                   Nat.sub_add_cancel hα]
-        exact heq)
-  simp only [Nat.sub_add_cancel hγ,
+  have h := noCounterexample_true
+  unfold noCounterexample at h
+  simp only [List.all_eq_true, List.mem_finRange] at h
+  have h1 := h ⟨γ - 1, by omega⟩
+  have h2 := h1 ⟨β - 1, by omega⟩
+  have h3 := h2 ⟨α - 1, by omega⟩
+  simp only [Fin.val_mk,
+             Nat.sub_add_cancel hγ,
              Nat.sub_add_cancel hβ,
-             Nat.sub_add_cancel hα] at h
-  exact h
+             Nat.sub_add_cancel hα] at h3
+  have heq' : check2pow γ - check5pow β = check3pow α := heq
+  simp only [heq', ↓reduceIte,
+             Bool.and_eq_true, beq_iff_eq] at h3
+  exact ⟨h3.1, h3.2.1, h3.2.2⟩
 
 end ABCmod.Mod81
