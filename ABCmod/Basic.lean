@@ -29,10 +29,12 @@ private lemma prod_pos_of_pos
   induction l with
   | nil => simp
   | cons a t ih =>
-    simp [List.prod_cons]
-    exact Nat.mul_pos
-      (h a (List.mem_cons_self a t))
-      (ih (fun x hx => h x (List.mem_cons_of_mem a hx)))
+    simp only [List.prod_cons]
+    apply Nat.mul_pos
+    · exact h a (List.mem_cons.mpr (Or.inl rfl))
+    · apply ih
+      intro x hx
+      exact h x (List.mem_cons.mpr (Or.inr hx))
 
 /-- radical は正 -/
 lemma radical_pos (n : ℕ) (hn : 0 < n) : 0 < radical n := by
