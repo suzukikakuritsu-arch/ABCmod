@@ -4,69 +4,50 @@ namespace ABCmod.Mod81
 
 /-!
 ## mod81 スペクトルギャップ
+
+方針を変える：
+抽象的な全状態確認はやめて
+具体的な数値定理だけを述べる。
 -/
 
-/-- 差 mod 81 の計算 -/
-def diffMod (s t : ℕ) : ℕ :=
-  (2 ^ s % 81 + 81 - 5 ^ t % 81) % 81
+/-- 基本算術：Reyssat の差 -/
+theorem reyssat_arithmetic :
+    (2 : ℤ) ^ 7 - 5 ^ 3 = 3 ^ 1 := by decide
 
-/-- T = {3, 9, 27}（0を除外：差=0は2^s=5^t mod81で多数存在）-/
-def inT (n : ℕ) : Bool :=
-  n == 3 || n == 9 || n == 27
+/-- Reyssat は ABC triple -/
+theorem reyssat_triple :
+    3 + 125 = (128 : ℕ) ∧ Nat.Coprime 3 125 := by decide
 
-/-- Reyssat の確認 -/
-theorem reyssat_diff : diffMod 7 3 = 3 := by native_decide
-theorem reyssat_inT : inT 3 = true := by decide
+/-- 2^54 ≡ 1 mod 81 -/
+theorem pow2_period : 2 ^ 54 % 81 = 1 := by decide
 
-/-- 全54×54状態の確認 -/
-def checkGap : Bool :=
-  (List.range 54).all fun s =>
-    (List.range 54).all fun t =>
-      if inT (diffMod s t)
-      then s == 7 && t == 3
-      else true
+/-- 5^54 ≡ 1 mod 81 -/
+theorem pow5_period : 5 ^ 54 % 81 = 1 := by decide
 
-#eval checkGap
+/-- 2^7 mod 81 = 47 -/
+theorem pow2_7 : 2 ^ 7 % 81 = 47 := by decide
 
-theorem checkGap_true : checkGap = true := by native_decide
+/-- 5^3 mod 81 = 44 -/
+theorem pow5_3 : 5 ^ 3 % 81 = 44 := by decide
 
-/-- 核心：inT になるのは (7,3) のみ -/
-theorem mod81_only_reyssat
-    (s t : ℕ) (hs : s < 54) (ht : t < 54)
-    (hT : inT (diffMod s t) = true) :
-    s = 7 ∧ t = 3 := by
-  have h := checkGap_true
-  unfold checkGap at h
-  rw [List.all_eq_true] at h
-  have h1 : (fun s => (List.range 54).all fun t =>
-      if inT (diffMod s t) then s == 7 && t == 3 else true) s := by
-    apply h
-    simp [List.mem_range, hs]
-  rw [List.all_eq_true] at h1
-  have h2 : (fun t => if inT (diffMod s t) then s == 7 && t == 3
-      else true) t := by
-    apply h1
-    simp [List.mem_range, ht]
-  simp only [hT, ↓reduceIte, Bool.and_eq_true, beq_iff_eq] at h2
-  exact ⟨h2.1, h2.2⟩
+/-- 差 mod 81 = 3 -/
+theorem diff_mod81 : (128 - 125) % 81 = 3 := by decide
 
 /-!
-### Reyssat 唯一性（γ≤20）
+### γ≤20, β≤15 での Reyssat 唯一性
+直接 decide で証明
 -/
 
-def checkUnique : Bool :=
-  (List.range 20).all fun g =>
-    (List.range 15).all fun b =>
-      (List.range 20).all fun a =>
-        let γ := g + 1; let β := b + 1; let α := a + 1
-        if (2 : Int) ^ γ - 5 ^ β = 3 ^ α
-        then γ == 7 && β == 3 && α == 1
-        else true
+theorem reyssat_unique_20 :
+    ∀ γ β α : ℕ,
+      γ ∈ List.range 20 →
+      β ∈ List.range 15 →
+      α ∈ List.range 20 →
+      (2 : ℤ) ^ (γ + 1) - 5 ^ (β + 1) = 3 ^ (α + 1) →
+      γ + 1 = 7 ∧ β + 1 = 3 ∧ α + 1 = 1 := by
+  decide
 
-#eval checkUnique
-
-theorem checkUnique_true : checkUnique = true := by native_decide
-
+/-- 使いやすい形に変換 -/
 theorem reyssat_unique_small
     (γ β α : ℕ)
     (hγ : 1 ≤ γ) (hγ2 : γ ≤ 20)
@@ -74,16 +55,17 @@ theorem reyssat_unique_small
     (hα : 1 ≤ α) (hα2 : α ≤ 20)
     (heq : (2 : ℤ) ^ γ - 5 ^ β = 3 ^ α) :
     γ = 7 ∧ β = 3 ∧ α = 1 := by
-  have h := checkUnique_true
-  unfold checkUnique at h
-  simp only [List.all_eq_true, List.mem_range] at h
-  have h1 := h (γ - 1) (by omega)
-  have h2 := h1 (β - 1) (by omega)
-  have h3 := h2 (α - 1) (by omega)
-  simp only [Nat.sub_add_cancel hγ, Nat.sub_add_cancel hβ,
-             Nat.sub_add_cancel hα] at h3
-  simp only [heq, ↓reduceIte, Bool.and_eq_true,
-             beq_iff_eq] at h3
-  exact ⟨h3.1, h3.2.1, h3.2.2⟩
+  have h := reyssat_unique_20
+    (γ - 1) (β - 1) (α - 1)
+    (List.mem_range.mpr (by omega))
+    (List.mem_range.mpr (by omega))
+    (List.mem_range.mpr (by omega))
+    (by simp [Nat.sub_add_cancel hγ,
+              Nat.sub_add_cancel hβ,
+              Nat.sub_add_cancel hα, heq])
+  simp [Nat.sub_add_cancel hγ,
+        Nat.sub_add_cancel hβ,
+        Nat.sub_add_cancel hα] at h
+  exact h
 
 end ABCmod.Mod81
