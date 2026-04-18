@@ -1,6 +1,7 @@
 import Mathlib.Data.Nat.Prime.Basic
 import Mathlib.Data.Nat.Factors
 import Mathlib.Data.List.Dedup
+import Mathlib.Data.List.Prod
 
 namespace ABCmod
 
@@ -19,17 +20,25 @@ structure Triple where
 def radical (n : ℕ) : ℕ :=
   n.primeFactorsList.dedup.prod
 
-/-- omega : 素因数の個数 -/
+/-- omega' : 素因数の個数 -/
 def omega' (n : ℕ) : ℕ :=
   n.primeFactorsList.dedup.length
 
 /-- radical は正 -/
 lemma radical_pos (n : ℕ) (hn : 0 < n) : 0 < radical n := by
   unfold radical
-  apply List.prod_pos
-  intro p hp
-  have hmem := List.mem_dedup.mp hp
-  exact Nat.Prime.pos (Nat.prime_of_mem_primeFactorsList hmem)
+  induction n.primeFactorsList.dedup with
+  | nil =>
+    simp
+  | cons p ps ih =>
+    simp [List.prod_cons]
+    constructor
+    · have : p ∈ p :: ps := List.mem_cons_self p ps
+      have hmem : p ∈ n.primeFactorsList := by
+        have := List.mem_dedup.mp this
+        exact this
+      exact Nat.Prime.pos (Nat.prime_of_mem_primeFactorsList hmem)
+    · exact ih
 
 /-- Reyssat triple の算術的確認 -/
 lemma reyssat_sum : (3 : ℕ) + 125 = 128 := by decide
