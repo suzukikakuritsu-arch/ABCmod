@@ -2,7 +2,7 @@ import ABCmod.Basic
 
 namespace ABCmod.Mod81
 
-/-- 基本算術 -/
+/-- 基本算術確認 -/
 theorem reyssat_arithmetic :
     (2 : ℤ) ^ 7 - 5 ^ 3 = 3 ^ 1 := by decide
 
@@ -12,30 +12,17 @@ theorem reyssat_triple :
 theorem pow2_period : 2 ^ 54 % 81 = 1 := by decide
 theorem pow5_period : 5 ^ 54 % 81 = 1 := by decide
 
-/-!
-### Reyssat 唯一性
-Int の等式を Bool 関数で表現して decide
--/
+/-- Reyssat 唯一性：Bool 版定義 -/
+private def check (g b a : ℕ) : Bool :=
+  if (2 : ℤ) ^ g - 5 ^ b == 3 ^ a
+  then g == 7 && b == 3 && a == 1
+  else true
 
-private def check2pow (n : ℕ) : ℤ := 2 ^ n
-private def check5pow (n : ℕ) : ℤ := 5 ^ n
-private def check3pow (n : ℕ) : ℤ := 3 ^ n
-
-private def isReyssat (g b a : ℕ) : Bool :=
-  (check2pow g - check5pow b == check3pow a) &&
-  (g != 7 || b != 3 || a != 1) == false
-
-/-- 反例がないことを確認 -/
 private def noCounterexample : Bool :=
   (List.finRange 20).all fun γ =>
   (List.finRange 15).all fun β =>
   (List.finRange 20).all fun α =>
-    let g := γ.val + 1
-    let b := β.val + 1
-    let a := α.val + 1
-    if check2pow g - check5pow b = check3pow a
-    then g == 7 && b == 3 && a == 1
-    else true
+    check (γ.val + 1) (β.val + 1) (α.val + 1)
 
 #eval noCounterexample
 
@@ -55,12 +42,13 @@ theorem reyssat_unique_small
   have h1 := h ⟨γ - 1, by omega⟩
   have h2 := h1 ⟨β - 1, by omega⟩
   have h3 := h2 ⟨α - 1, by omega⟩
-  simp only [Fin.val_mk,
-             Nat.sub_add_cancel hγ,
+  unfold check at h3
+  simp only [Nat.sub_add_cancel hγ,
              Nat.sub_add_cancel hβ,
              Nat.sub_add_cancel hα] at h3
-  have heq' : check2pow γ - check5pow β = check3pow α := heq
-  simp only [heq', ↓reduceIte,
+  have heqB : ((2 : ℤ) ^ γ - 5 ^ β == 3 ^ α) = true := by
+    simp [heq]
+  simp only [heqB, ↓reduceIte,
              Bool.and_eq_true, beq_iff_eq] at h3
   exact ⟨h3.1, h3.2.1, h3.2.2⟩
 
