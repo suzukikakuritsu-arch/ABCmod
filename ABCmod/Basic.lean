@@ -23,10 +23,21 @@ def radical (n : ℕ) : ℕ :=
 def omega' (n : ℕ) : ℕ :=
   n.primeFactorsList.dedup.length
 
+/-- リストの全要素が正なら積も正 -/
+private lemma prod_pos_of_pos
+    (l : List ℕ) (h : ∀ x ∈ l, 0 < x) : 0 < l.prod := by
+  induction l with
+  | nil => simp
+  | cons a t ih =>
+    simp [List.prod_cons]
+    exact Nat.mul_pos
+      (h a (List.mem_cons_self a t))
+      (ih (fun x hx => h x (List.mem_cons_of_mem a hx)))
+
 /-- radical は正 -/
 lemma radical_pos (n : ℕ) (hn : 0 < n) : 0 < radical n := by
   unfold radical
-  apply List.prod_pos
+  apply prod_pos_of_pos
   intro x hx
   have hmem := List.mem_dedup.mp hx
   exact Nat.Prime.pos (Nat.prime_of_mem_primeFactorsList hmem)
