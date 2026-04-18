@@ -1,7 +1,6 @@
 import Mathlib.Data.Nat.Prime.Basic
 import Mathlib.Data.Nat.Factors
 import Mathlib.Data.List.Dedup
-import Mathlib.Data.List.Prod
 
 namespace ABCmod
 
@@ -27,20 +26,12 @@ def omega' (n : ℕ) : ℕ :=
 /-- radical は正 -/
 lemma radical_pos (n : ℕ) (hn : 0 < n) : 0 < radical n := by
   unfold radical
-  induction n.primeFactorsList.dedup with
-  | nil =>
-    simp
-  | cons p ps ih =>
-    simp [List.prod_cons]
-    constructor
-    · have : p ∈ p :: ps := List.mem_cons_self p ps
-      have hmem : p ∈ n.primeFactorsList := by
-        have := List.mem_dedup.mp this
-        exact this
-      exact Nat.Prime.pos (Nat.prime_of_mem_primeFactorsList hmem)
-    · exact ih
+  apply List.prod_pos
+  intro x hx
+  have hmem := List.mem_dedup.mp hx
+  exact Nat.Prime.pos (Nat.prime_of_mem_primeFactorsList hmem)
 
-/-- Reyssat triple の算術的確認 -/
+/-- Reyssat の算術的確認 -/
 lemma reyssat_sum : (3 : ℕ) + 125 = 128 := by decide
 
 lemma reyssat_coprime : Nat.Coprime 3 125 := by decide
